@@ -1,0 +1,3 @@
+# git ignore node js express js 
+node_modules
+.env
