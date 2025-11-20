@@ -5,15 +5,8 @@ import {
   fetchLichessProfile,
 } from "../services/lichessOAuth.js";
 
-const sanitizeUrl = (value, fallback = "") => {
-  if (!value) return fallback;
-  return value.endsWith("/") ? value.slice(0, -1) : value;
-};
-
-const FRONTEND_URL = sanitizeUrl(
-  process.env.FRONTEND_URL,
-  "http://localhost:3000"
-);
+// Removed sanitizeUrl function and fallback logic.
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const GOOGLE_ENDPOINT =
   process.env.GOOGLE_OAUTH_ENDPOINT ||
@@ -25,6 +18,10 @@ const GOOGLE_SCOPE = [
 ].join(" ");
 
 const exchangeGoogleCodeForTokens = async (code) => {
+  if (!FRONTEND_URL) {
+    throw new Error("FRONTEND_URL environment variable is not set.");
+  }
+
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -63,6 +60,11 @@ const fetchGoogleProfile = async (accessToken) => {
 };
 
 export const redirectGoogleAuth = (req, res) => {
+  if (!FRONTEND_URL) {
+    console.error("FRONTEND_URL environment variable is not set.");
+    return res.status(500).json({ success: false, message: "Server misconfiguration: Frontend URL is missing." });
+  }
+
   const url = new URL(GOOGLE_ENDPOINT);
   url.search = new URLSearchParams({
     redirect_uri: `${FRONTEND_URL}/login/google`,
@@ -84,6 +86,7 @@ export const verifyGoogleAuth = async (req, res) => {
         .json({ success: false, message: "Authorization code is required" });
     }
 
+    // exchangeGoogleCodeForTokens handles the FRONTEND_URL check now.
     const tokens = await exchangeGoogleCodeForTokens(code);
     const profile = await fetchGoogleProfile(tokens.access_token);
     const loginResult = await handleGoogleAuth(profile);
@@ -102,6 +105,9 @@ export const verifyGoogleAuth = async (req, res) => {
     });
   } catch (error) {
     console.error("Google verify error:", error);
+    if (error.message.includes("FRONTEND_URL")) {
+      return res.status(500).json({ success: false, message: "Server misconfiguration: Frontend URL is missing." });
+    }
     return res
       .status(500)
       .json({ success: false, message: "Internal server error" });
