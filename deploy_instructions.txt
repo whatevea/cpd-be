@@ -1,0 +1,15 @@
+first build the docker image 
+-- docker build -t sandiph/cpd-be:latest .
+-- docker push sandiph/cpd-be
+
+Goto ssh 
+docker stop cpd-backend
+docker rm cpd-backend
+
+docker pull sandiph/cpd-be:latest
+
+docker run -d \
+  --name cpd-backend \
+  -p 3001:5000 \
+  --restart unless-stopped \
+  sandiph/cpd-be:latest

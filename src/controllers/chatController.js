@@ -10,25 +10,8 @@ const MAX_MESSAGE_LENGTH = 600;
 const ALLOWED_MESSAGE_TYPES = new Set(["text", "game"]);
 const AI_USER_ID = "67a04645ca79d244162b407e";
 
-const buildMessagePayload = (doc, fallbackUser) => {
-  const user =
-    doc.user && typeof doc.user === "object"
-      ? {
-        _id: doc.user._id?.toString(),
-        username: doc.user.username,
-      }
-      : fallbackUser;
 
-  return {
-    _id: doc._id?.toString(),
-    user,
-    message: doc.message,
-    messageType: doc.messageType,
-    gameDetail: doc.gameDetail || {},
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
-  };
-};
+
 
 const respondWithAi = async (rawMessage) => {
   try {
@@ -151,11 +134,8 @@ export const sendMessage = async (req, res) => {
     });
 
     const userDetails = await User.findById(req.user.id).select("username");
-    const payload = buildMessagePayload(newMessage, {
-      _id: req.user.id,
-      username: userDetails?.username || req.user.username || "Anonymous Player",
-    });
-
+    const payload = newMessage;
+    payload.user = userDetails;
     await publishMessageToCentrifugo(payload);
 
     const aiQuery = rawMessage.match(/^@ai\s+(.+)/i)?.[1]?.trim();
@@ -179,3 +159,14 @@ export const get_connection_token = async (req, res) => {
 
 };
 
+// {
+//     "_id": "691ee8eb2725dd0820d39f68",
+//     "user": {
+//         "_id": "67f241ee2594faff09c553d2"
+//     },
+//     "message": "H",
+//     "messageType": "text",
+//     "gameDetail": {},
+//     "createdAt": "2025-11-20T10:09:47.438Z",
+//     "updatedAt": "2025-11-20T10:09:47.438Z"
+// }
