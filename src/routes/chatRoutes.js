@@ -8,7 +8,7 @@ import { authenticate } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/getMessages", authenticate, getMessages);
+router.get("/getMessages", getMessages);
 router.post("/sendMessage", authenticate, sendMessage);
-router.get("/get_connection_token", authenticate, get_connection_token)
+router.get("/get_connection_token", get_connection_token)
 export default router;
