@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import UserMessage from "../models/UserMessage.js";
 import User from "../models/User.js";
-import { llmreply } from "../services/aichat.js";
+import { llmreply } from "../services/gemini.js";
 import { publishMessageToCentrifugo, generateCentrifugoToken } from "../utils/centrifugo.js";
 
 const DEFAULT_LIMIT = 30;
@@ -25,13 +25,12 @@ const respondWithAi = async (rawMessage) => {
       message: answer,
       messageType: "text",
     });
-
-    const payload = buildMessagePayload(aiMessage, {
-      _id: AI_USER_ID,
-      username: "AI Assistant",
-    });
+    const aiUserDetails = { _id: AI_USER_ID, username: "AI" };
+    const payload = aiMessage;
+    payload.user = aiUserDetails;
 
     await publishMessageToCentrifugo(payload);
+
   } catch (error) {
     console.error("AI response failed:", error);
   }
@@ -136,6 +135,7 @@ export const sendMessage = async (req, res) => {
     const userDetails = await User.findById(req.user.id).select("username");
     const payload = newMessage;
     payload.user = userDetails;
+
     await publishMessageToCentrifugo(payload);
 
     const aiQuery = rawMessage.match(/^@ai\s+(.+)/i)?.[1]?.trim();

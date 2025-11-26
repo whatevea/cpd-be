@@ -23,7 +23,6 @@ export const publishMessageToCentrifugo = async (data) => {
         console.error("Centrifugo environment variables not set. Cannot publish message.");
         return;
     }
-    const namespacedChannel = `${CENTRIFUGO_CHAT_NAMESPACE}`;
     try {
         await axios.post(
             `${CENTRIFUGO_HOST}/api`,
